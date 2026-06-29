@@ -123,13 +123,13 @@ btn.addEventListener('click', () => {
     ctx.textBaseline = 'middle';
 
     const line1Size = Math.round(S * 0.72);
-    const line2Size = Math.round(S * 0.5);
+    const line2Size = Math.round(S * 0.6);
     const lineGap   = line1Size * 1.5;
 
     // "I LOVE U"
     glow('I LOVE U', cx, cy - lineGap * 0.4, line1Size, '#ff003c', '#ff4d6d', '#ffffff');
     // "<3"
-    glow('<3', cx, cy + lineGap * 0.7, line2Size, '#ff003c', '#ff4d6d', '#ff8fb1');
+    glow('<3', cx, cy + lineGap * 0.7, line2Size, '#ff4d6d', '#ff7a95', '#ffffff');
 
     ctx.restore();
   }
