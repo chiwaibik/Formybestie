@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>♡</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #050505;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: 'Fira Code', monospace;
+}
+#btn {
+  color: #ff8fb1;
+  background: rgba(255,77,109,0.05);
+  border: 1px solid rgba(255,77,109,0.3);
+  padding: 12px 24px;
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s, border-color 0.2s;
+}
+#btn:hover { background: rgba(255,77,109,0.12); border-color: rgba(255,77,109,0.6); }
+.blink {
+  display: inline-block; width: 2px; height: 1em;
+  background: #ff4d6d; vertical-align: middle;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:0} 50%{opacity:1} }
+canvas { position:fixed; inset:0; display:none; }
+.scanline {
+  pointer-events:none; position:fixed; width:100%; height:100px; z-index:10;
+  background: linear-gradient(0deg,transparent,rgba(255,255,255,0.018),transparent);
+  animation: scan 10s linear infinite; bottom:100%;
+}
+@keyframes scan { 0%{bottom:100%} 100%{bottom:-100px} }
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<button id="btn">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="3" y="11" width="18" height="11" rx="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+  Decrypt Message<span class="blink"></span>
+</button>
+<canvas id="c"></canvas>
+<script>
+const btn = document.getElementById('btn');
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+btn.addEventListener('click', () => {
+  btn.style.display = 'none';
+  canvas.style.display = 'block';
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const PHRASE = 'I LOVE YOU ';
+  const CELL = Math.max(14, Math.round(Math.min(canvas.width, canvas.height) / 46));
+  const fontSize = Math.round(CELL * 0.85);
+
+  const cx = canvas.width  / 2;
+  const cy = canvas.height / 2 + CELL * 0.5;
+  const S  = Math.min(canvas.width, canvas.height) / 38;
+
+  const SAMPLES = 6000;
+  const perim = [];
+  for (let i = 0; i < SAMPLES; i++) {
+    const t  = (i / SAMPLES) * Math.PI * 2;
+    const hx = 16 * Math.pow(Math.sin(t), 3);
+    const hy = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
+    perim.push({ x: cx + hx * S, y: cy + hy * S });
+  }
+
+  const letters = [];
+  let accumulated = 0;
+  let phraseIdx = 0;
+  let prev = perim[0];
+
+  for (let i = 1; i < perim.length; i++) {
+    const dx = perim[i].x - prev.x;
+    const dy = perim[i].y - prev.y;
+    accumulated += Math.sqrt(dx*dx + dy*dy);
+    if (accumulated >= CELL) {
+      accumulated -= CELL;
+      letters.push({ x: perim[i].x, y: perim[i].y, ch: PHRASE[phraseIdx % PHRASE.length] });
+      phraseIdx++;
+      prev = perim[i];
+    }
+  }
+
+  function glow(text, x, y, size, color1, color2, color3) {
+    ctx.font = `500 ${size}px "Fira Code", monospace`;
+    ctx.shadowColor = color1; ctx.shadowBlur = 24; ctx.fillStyle = color1; ctx.fillText(text, x, y);
+    ctx.shadowColor = color2; ctx.shadowBlur = 10; ctx.fillStyle = color2; ctx.fillText(text, x, y);
+    ctx.shadowBlur  = 3;                           ctx.fillStyle = color3; ctx.fillText(text, x, y);
+  }
+
+  function drawLetter(l) {
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    glow(l.ch, l.x, l.y, fontSize, '#ff003c', '#ff4d6d', '#ffb3c6');
+    ctx.restore();
+  }
+
+  function drawCenter() {
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const line1Size = Math.round(S * 0.72);
+    const line2Size = Math.round(S * 0.5);
+    const lineGap   = line1Size * 1.5;
+
+    // "I LOVE U"
+    glow('I LOVE U', cx, cy - lineGap * 0.4, line1Size, '#ff003c', '#ff4d6d', '#ffffff');
+    // "<3"
+    glow('<3', cx, cy + lineGap * 0.7, line2Size, '#ff003c', '#ff4d6d', '#ff8fb1');
+
+    ctx.restore();
+  }
+
+  const totalDuration = letters.length * 18;
+
+  letters.forEach((l, i) => {
+    setTimeout(() => drawLetter(l), i * 18);
+  });
+
+  // Center text appears after contour is done, with a fade-in via opacity trick
+  setTimeout(() => {
+    let alpha = 0;
+    function fadeIn() {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      drawCenter();
+      ctx.restore();
+      alpha += 0.04;
+      if (alpha < 1) requestAnimationFrame(fadeIn);
+      else drawCenter(); // final sharp draw
+    }
+    fadeIn();
+  }, totalDuration + 300);
+});
+</script>
+</body>
+</html>
