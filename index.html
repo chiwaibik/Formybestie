@@ -126,9 +126,7 @@ btn.addEventListener('click', () => {
     const line2Size = Math.round(S * 0.9);
     const lineGap   = line1Size * 1.5;
 
-    // "I LOVE U"
     glow('ЯСЯ, Я ЛЮБЛЮ ТЯ', cx, cy - lineGap * 0.4, line1Size, '#ff003c', '#ff4d6d', '#ffffff');
-    // "<3"
     glow('<3', cx, cy + lineGap * 0.7, line2Size, '#ff4d6d', '#ff7a95', '#ffffff');
 
     ctx.restore();
@@ -140,7 +138,6 @@ btn.addEventListener('click', () => {
     setTimeout(() => drawLetter(l), i * 18);
   });
 
-  // Center text appears after contour is done, with a fade-in via opacity trick
   setTimeout(() => {
     let alpha = 0;
     function fadeIn() {
@@ -150,7 +147,7 @@ btn.addEventListener('click', () => {
       ctx.restore();
       alpha += 0.04;
       if (alpha < 1) requestAnimationFrame(fadeIn);
-      else drawCenter(); // final sharp draw
+      else drawCenter();
     }
     fadeIn();
   }, totalDuration + 300);
